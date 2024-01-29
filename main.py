@@ -16,7 +16,6 @@ def main():
 
 def exit_program():
   print("Exiting the program...")
-  interrupt()
   sys.exit(0)
 
 main()
