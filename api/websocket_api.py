@@ -9,13 +9,29 @@ import websocket #NOTE: websocket-client (https://github.com/websocket-client/we
 from PIL import Image
 import io
 from utils.helpers.find_node import find_node
-
+from requests_toolbelt import MultipartEncoder
 
 server_address='127.0.0.1:8188'
 client_id=str(uuid.uuid4())
 
 ws = websocket.WebSocket()
 ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))
+
+def setup_image(input_path, name, type="input", overwrite=False):
+    with open(input_path, 'rb') as file:
+        multipart_data = MultipartEncoder(
+            fields={
+                'image': (name, file, 'image/jpeg'),  # Adjust the content-type accordingly
+                'type': type,
+                'overwrite': str(overwrite).lower()
+            }
+        )
+
+        data = multipart_data
+        headers = {'Content-Type': multipart_data.content_type}
+        request = urllib.request.Request("http://{}/upload/image".format(server_address), data=data, headers=headers)
+        with urllib.request.urlopen(request) as response:
+            return response.read()
 
 def generate_image_by_prompt(prompt, output_path, save_previews=False):
     prompt_id = queue_prompt(prompt)['prompt_id']

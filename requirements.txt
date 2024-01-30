@@ -1,3 +1,4 @@
 Pillow==10.0.0
 Pillow==10.2.0
+requests_toolbelt==1.0.0
 websocket_client==1.7.0

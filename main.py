@@ -1,4 +1,5 @@
 from utils.actions.prompt_to_image import prompt_to_image
+from utils.actions.prompt_image_to_image import prompt_image_to_image
 from utils.actions.load_workflow import load_workflow
 from api.websocket_api import clear_comfy_cache
 from api.websocket_api import get_image
@@ -8,9 +9,11 @@ import sys
 def main():
     try:
       print("Welcome to the program!")
-      workflow = load_workflow('./workflows/image_refeed_workflow.json')
+      workflow = load_workflow('./workflows/image_to_image.json')
 
-      prompt_to_image(workflow, 'beautiful woman sitting on a desk in a nice restaurant, candlelight dinner atmosphere, wearing a red dress', save_previews=True)
+      # prompt_to_image(workflow, 'beautiful woman sitting on a desk in a nice restaurant, candlelight dinner atmosphere, wearing a red dress', save_previews=True)
+      input_path = './input/ComfyUI_00103_.png'
+      prompt_image_to_image(workflow, input_path, 'beautiful [white woman], (dark lighting), curly blond hair', save_previews=True)
     except Exception as e:
       print(f"An error occurred: {e}")
       exit_program()
