@@ -1,2 +1,4 @@
 output*
+workflow*
 __pycache__/
+.DS_Store*

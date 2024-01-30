@@ -8,6 +8,7 @@ import urllib.parse
 import websocket #NOTE: websocket-client (https://github.com/websocket-client/websocket-client)
 from PIL import Image
 import io
+from utils.helpers.find_node import find_node
 
 
 server_address='127.0.0.1:8188'
@@ -18,6 +19,7 @@ ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))
 
 def generate_image_by_prompt(prompt, output_path, save_previews=False):
     prompt_id = queue_prompt(prompt)['prompt_id']
+    track_progress(prompt, ws, prompt_id)
     images = get_images(ws, prompt_id, save_previews)
     save_image(images, output_path, save_previews)
 
@@ -29,6 +31,38 @@ def save_image(images, output_path, save_previews):
         else:
             image = Image.open(io.BytesIO(itm['image_data']))
             image.save(output_path + itm['file_name'])
+
+
+def track_progress(prompt, ws, prompt_id):
+    node_ids = list(prompt.keys())
+    finished_nodes = []
+
+    while True:
+        out = ws.recv()
+        if isinstance(out, str):
+            message = json.loads(out)
+            if message['type'] == 'progress':
+                data = message['data']
+                current_step = data['value']
+                print('In K-Sampler -> Step: ', current_step, ' of: ', data['max'])
+            if message['type'] == 'execution_cached':
+                data = message['data']
+                for itm in data['nodes']:
+                    if itm not in finished_nodes:
+                        finished_nodes.append(itm)
+                        print('Progess: ', len(finished_nodes), '/', len(node_ids), ' Tasks done')
+            if message['type'] == 'executing':
+                data = message['data']
+                if data['node'] not in finished_nodes:
+                    finished_nodes.append(data['node'])
+                    print('Progess: ', len(finished_nodes), '/', len(node_ids), ' Tasks done')
+
+
+                if data['node'] is None and data['prompt_id'] == prompt_id:
+                    break #Execution is done
+        else:
+            continue #previews are binary data
+    return
 
 def queue_prompt(prompt):
     p = {"prompt": prompt, "client_id": client_id}
@@ -52,17 +86,6 @@ def get_history(prompt_id):
 
 def get_images(ws, prompt_id, allow_preview = False):
     output_images = []
-    while True:
-        out = ws.recv()
-        if isinstance(out, str):
-            message = json.loads(out)
-            if message['type'] == 'executing':
-                data = message['data']
-                if data['node'] is None and data['prompt_id'] == prompt_id:
-                    break #Execution is done
-        else:
-            continue #previews are binary data
-
 
     history = get_history(prompt_id)[prompt_id]
     for node_id in history['outputs']:
@@ -82,5 +105,17 @@ def get_images(ws, prompt_id, allow_preview = False):
 
     return output_images
 
+def get_node_info_by_class(node_class):
+    with urllib.request.urlopen("http://{}/object_info/{}".format(server_address, node_class)) as response:
+        return json.loads(response.read())
 
+def clear_comfy_cache(unload_models=False, free_memory=False):
+    clear_data = {
+        "unload_models": unload_models,
+        "free_memory": free_memory
+    }
+    data = json.dumps(clear_data).encode('utf-8')
+
+    with urllib.request.urlopen("http://{}/free".format(server_address), data=data) as response:
+        return response.read()
 
