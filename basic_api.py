@@ -33,6 +33,70 @@ def open_websocket_connection():
 # ---------------------------------------------------------------------------------------------------------------------
 # Basic API calls
 
+def queue_prompt(prompt, client_id, server_address):
+  """
+  Sends a prompt to a ComfyUI to place it into the workflow queue
+
+  This function takes a text prompt along with a client identifier and the server's address, then queues the prompt
+  for processing on running ComfyUI. The server is expected to accept JSON data containing the prompt and client ID, and
+  it returns a JSON response. The communication is done over HTTP.
+
+  Args:
+    prompt (str): The text prompt to be sent to running ComfyUI for processing.
+    client_id (str): The identifier for the client sending the request, used by the server to track or manage the request.
+    server_address (str): The address of running ComfyUI where the prompt is to be sent, excluding the protocol prefix.
+
+  Returns:
+    dict: A dictionary parsed from the JSON response from running ComfyUI, containing the result of processing the prompt.
+  """
+  p = {"prompt": prompt, "client_id": client_id}
+  headers = {'Content-Type': 'application/json'}
+  data = json.dumps(p).encode('utf-8')
+  req =  urllib.request.Request("http://{}/prompt".format(server_address), data=data, headers=headers)
+  return json.loads(urllib.request.urlopen(req).read())
+
+
+
+def get_history(prompt_id, server_address):
+  """
+  Fetches the history to a given prompt ID from ComfyUI
+
+  This function makes an HTTP GET request to a specified server address, requesting the history associated with
+  a given prompt ID. The server is expected to return a JSON response that contains the history data, that
+  include e.g the paths to the generated Images
+
+  Args:
+    prompt_id (str): The unique identifier for the prompt whose history is being requested.
+    server_address (str): The address of ComfyUI from which to retrieve the history, excluding the protocol prefix.
+
+  Returns:
+    A dictionary parsed from the JSON response containing the history associated with the specified prompt ID.
+  """
+  with urllib.request.urlopen("http://{}/history/{}".format(server_address, prompt_id)) as response:
+      return json.loads(response.read())
+
+def get_image(filename, subfolder, folder_type, server_address):
+  """
+  Retrieves an image from ComfyUI based on specified parameters and returns the image data.
+
+  This function constructs a query string with the filename, subfolder, and folder type to request an image from
+  ComfyUI. It communicates over HTTP to access the specified resource. The server is expected to return the
+  image data in response to the constructed URL, which includes the server address and the query parameters.
+
+  Args:
+    filename (str): The name of the image file to retrieve.
+    subfolder (str): The subfolder within the server's storage where the image is located.
+    folder_type (str): The type of folder options are "output", "temp", "input" where the image is stored.
+    server_address (str): The address of running ComfyUI from which to retrieve the image, excluding the protocol prefix.
+
+  Returns:
+    The raw image data as returned by ComfyUI in response to the query.
+  """
+  data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
+  url_values = urllib.parse.urlencode(data)
+  with urllib.request.urlopen("http://{}/view?{}".format(server_address, url_values)) as response:
+      return response.read()
+
 def upload_image(input_path, name, server_address, image_type="input", overwrite=False):
   """
   Uploads an image to ComfyUI using multipart/form-data encoding.
@@ -66,68 +130,6 @@ def upload_image(input_path, name, server_address, image_type="input", overwrite
     request = urllib.request.Request("http://{}/upload/image".format(server_address), data=data, headers=headers)
     with urllib.request.urlopen(request) as response:
       return response.read()
-
-def queue_prompt(prompt, client_id, server_address):
-  """
-  Sends a prompt to a ComfyUI to place it into the workflow queue
-
-  This function takes a text prompt along with a client identifier and the server's address, then queues the prompt
-  for processing on running ComfyUI. The server is expected to accept JSON data containing the prompt and client ID, and
-  it returns a JSON response. The communication is done over HTTP.
-
-  Args:
-    prompt (str): The text prompt to be sent to running ComfyUI for processing.
-    client_id (str): The identifier for the client sending the request, used by the server to track or manage the request.
-    server_address (str): The address of running ComfyUI where the prompt is to be sent, excluding the protocol prefix.
-
-  Returns:
-    dict: A dictionary parsed from the JSON response from running ComfyUI, containing the result of processing the prompt.
-  """
-  p = {"prompt": prompt, "client_id": client_id}
-  headers = {'Content-Type': 'application/json'}
-  data = json.dumps(p).encode('utf-8')
-  req =  urllib.request.Request("http://{}/prompt".format(server_address), data=data, headers=headers)
-  return json.loads(urllib.request.urlopen(req).read())
-
-def get_image(filename, subfolder, folder_type, server_address):
-  """
-  Retrieves an image from ComfyUI based on specified parameters and returns the image data.
-
-  This function constructs a query string with the filename, subfolder, and folder type to request an image from
-  ComfyUI. It communicates over HTTP to access the specified resource. The server is expected to return the
-  image data in response to the constructed URL, which includes the server address and the query parameters.
-
-  Args:
-    filename (str): The name of the image file to retrieve.
-    subfolder (str): The subfolder within the server's storage where the image is located.
-    folder_type (str): The type of folder options are "output", "temp", "input" where the image is stored.
-    server_address (str): The address of running ComfyUI from which to retrieve the image, excluding the protocol prefix.
-
-  Returns:
-    The raw image data as returned by ComfyUI in response to the query.
-  """
-  data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
-  url_values = urllib.parse.urlencode(data)
-  with urllib.request.urlopen("http://{}/view?{}".format(server_address, url_values)) as response:
-      return response.read()
-
-def get_history(prompt_id, server_address):
-  """
-  Fetches the history to a given prompt ID from ComfyUI
-
-  This function makes an HTTP GET request to a specified server address, requesting the history associated with
-  a given prompt ID. The server is expected to return a JSON response that contains the history data, that
-  include e.g the paths to the generated Images
-
-  Args:
-    prompt_id (str): The unique identifier for the prompt whose history is being requested.
-    server_address (str): The address of ComfyUI from which to retrieve the history, excluding the protocol prefix.
-
-  Returns:
-    A dictionary parsed from the JSON response containing the history associated with the specified prompt ID.
-  """
-  with urllib.request.urlopen("http://{}/history/{}".format(server_address, prompt_id)) as response:
-      return json.loads(response.read())
 
 # -------------------------------------------------------------------------------------------------------
 # API helper
@@ -184,7 +186,7 @@ def generate_image_by_prompt_and_image(prompt, output_path, input_path, filename
   """
   try:
     ws, server_address, client_id = open_websocket_connection()
-    upload_image(input_path, filename, server_address, client_id)
+    upload_image(input_path, filename, server_address)
     prompt_id = queue_prompt(prompt, client_id, server_address)['prompt_id']
     track_progress(prompt, ws, prompt_id)
     images = get_images(prompt_id, server_address, save_previews)
@@ -371,9 +373,9 @@ def prompt_to_image(workflow, positve_prompt, negative_prompt='', save_previews=
 
   if negative_prompt != '':
     negative_input_id = prompt.get(k_sampler)['inputs']['negative'][0]
-    prompt.get(negative_input_id)['inputs']['text'] = positve_prompt
+    prompt.get(negative_input_id)['inputs']['text'] = negative_prompt
 
-  generate_image_by_prompt(prompt, './output/', save_previews)
+  generate_image_by_prompt(prompt, './output/blog/cyborg', save_previews)
 
 def prompt_image_to_image(workflow, input_path, positve_prompt, negative_prompt='', save_previews=False):
   """
@@ -403,20 +405,21 @@ def prompt_image_to_image(workflow, input_path, positve_prompt, negative_prompt=
   k_sampler = [key for key, value in id_to_class_type.items() if value == 'KSampler'][0]
   prompt.get(k_sampler)['inputs']['seed'] = random.randint(10**14, 10**15 - 1)
   postive_input_id = prompt.get(k_sampler)['inputs']['positive'][0]
-  prompt.get(postive_input_id)['inputs']['text_g'] = positve_prompt
-  prompt.get(postive_input_id)['inputs']['text_l'] = positve_prompt
+  prompt.get(postive_input_id)['inputs']['text'] = positve_prompt
 
   if negative_prompt != '':
     negative_input_id = prompt.get(k_sampler)['inputs']['negative'][0]
-    id_to_class_type.get(negative_input_id)['inputs']['text_g'] = negative_prompt
-    id_to_class_type.get(negative_input_id)['inputs']['text_l'] = negative_prompt
+    prompt.get(negative_input_id)['inputs']['text'] = negative_prompt
 
   image_loader = [key for key, value in id_to_class_type.items() if value == 'LoadImage'][0]
   filename = input_path.split('/')[-1]
   prompt.get(image_loader)['inputs']['image'] = filename
 
-  generate_image_by_prompt_and_image(prompt, './output/', input_path, filename, save_previews)
+  generate_image_by_prompt_and_image(prompt, './output/blog/img2img', input_path, filename, save_previews)
 
 
 workflow = load_workflow('./workflows/base_workflow.json')
-prompt_to_image(workflow, 'Woman standing in a red dress in the middle of a crowded place with high skyscrapers', 'lowres, branding, watermark', save_previews=True)
+prompt_to_image(workflow, 'Cyborg in the cyberspace connection to different interfaces and screens with wires, cinematic, colorful, black and neon turquioise', 'ugly, lowres, text, branding', save_previews=True)
+# input_path = './input/ComfyUI_00299_.png'
+# for iter in range(1, 6):
+  # prompt_image_to_image(workflow, input_path, 'Woman in a red dress standing in middle of a crowded place, skyscrapers in the background, cinematic, dark colors, distopian', save_previews=True)
