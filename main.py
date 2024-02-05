@@ -1,19 +1,18 @@
 from utils.actions.prompt_to_image import prompt_to_image
 from utils.actions.prompt_image_to_image import prompt_image_to_image
 from utils.actions.load_workflow import load_workflow
-from api.websocket_api import clear_comfy_cache
-from api.websocket_api import get_image
-import time
+from api.api_helpers import clear
 import sys
 
 def main():
     try:
       print("Welcome to the program!")
-      workflow = load_workflow('./workflows/image_to_image.json')
-
-      # prompt_to_image(workflow, 'beautiful woman sitting on a desk in a nice restaurant, candlelight dinner atmosphere, wearing a red dress', save_previews=True)
-      input_path = './input/ComfyUI_00103_.png'
-      prompt_image_to_image(workflow, input_path, 'beautiful [white woman], (dark lighting), curly blond hair', save_previews=True)
+      workflow = load_workflow('./workflows/base_workflow.json')
+      for iter in range(1, 11):
+        prompt_to_image(workflow, '(realistic:1.25), beautiful:1.1) mountain landscape with a deep blue lake, photolike, high detail, monoton colors', 'lowres, text, branding, watermark, humans, frames, painting', save_previews=True)
+      # prompt_to_image(workflow, '(beautiful woman:1.3) sitting on a desk in a nice restaurant with a (glass of wine and plate with salat:0.9), (candlelight dinner atmosphere:1.1), (wearing a red evening dress:1.2), dimmed lighting, cinema, high detail', save_previews=True)
+      # input_path = './input/ComfyUI_00241_.png'
+      # prompt_image_to_image(workflow, input_path, '(white woman wearing a black evening dress:1.5), dimmed lighting, cinema, high detail', save_previews=True)
     except Exception as e:
       print(f"An error occurred: {e}")
       exit_program()
@@ -22,13 +21,7 @@ def exit_program():
   print("Exiting the program...")
   sys.exit(0)
 
-def clear():
-  clear_comfy_cache(True, True)
-
-def image_by_file():
-  print(get_image('ComfyUI_00042_.png', '', 'output'))
+def clear_comfy():
+  clear(True, True)
 
 main()
-# clear()
-
-# image_by_file()

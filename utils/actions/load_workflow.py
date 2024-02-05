@@ -1,8 +1,13 @@
 import json
 
 def load_workflow(workflow_path):
-  file = open(workflow_path)
-  workflow = json.load(file)
-  workflow = json.dumps(workflow)
-
-  return workflow
+    try:
+        with open(workflow_path, 'r') as file:
+            workflow = json.load(file)
+            return json.dumps(workflow)
+    except FileNotFoundError:
+        print(f"The file {workflow_path} was not found.")
+        return None
+    except json.JSONDecodeError:
+        print(f"The file {workflow_path} contains invalid JSON.")
+        return None
