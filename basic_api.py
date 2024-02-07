@@ -418,8 +418,7 @@ def prompt_image_to_image(workflow, input_path, positve_prompt, negative_prompt=
   generate_image_by_prompt_and_image(prompt, './output/blog/img2img', input_path, filename, save_previews)
 
 
-workflow = load_workflow('./workflows/base_workflow.json')
-prompt_to_image(workflow, 'Cyborg in the cyberspace connection to different interfaces and screens with wires, cinematic, colorful, black and neon turquioise', 'ugly, lowres, text, branding', save_previews=True)
-# input_path = './input/ComfyUI_00299_.png'
-# for iter in range(1, 6):
-  # prompt_image_to_image(workflow, input_path, 'Woman in a red dress standing in middle of a crowded place, skyscrapers in the background, cinematic, dark colors, distopian', save_previews=True)
+# workflow = load_workflow('./workflows/basic_image_to_image.json')
+# prompt_to_image(workflow, 'Cyborg in the cyberspace connection to different interfaces and screens with wires, cinematic, colorful, black and neon turquioise', 'ugly, lowres, text, branding', save_previews=True)
+# input_path = ''
+# prompt_image_to_image(workflow, input_path, 'Woman in a white dress standing in middle of a crowded place, skyscrapers in the background, cinematic, monotone colors, dark, dystopian', save_previews=True)

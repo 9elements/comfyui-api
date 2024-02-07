@@ -6,7 +6,7 @@
       "cfg": 8,
       "sampler_name": "dpmpp_3m_sde",
       "scheduler": "karras",
-      "denoise": 1,
+      "denoise": 0.6,
       "model": [
         "4",
         0
